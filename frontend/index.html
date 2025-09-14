@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Proposal Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h1>📄 Proposal Builder</h1>
+
+  <!-- Proposal Submission Form -->
+  <form id="proposalForm">
+    <label>Project Name:</label>
+    <input type="text" id="title" placeholder="Enter project name" required>
+
+    <label>About Project:</label>
+    <textarea id="description" placeholder="Enter project description" required></textarea>
+
+    <label>Items (format: item1:100,item2:150)</label>
+    <input type="text" id="items" placeholder="item:cost,item:cost">
+
+    <label>Total Amount:</label>
+    <input type="number" id="total" placeholder="Total amount" required>
+
+    <label>Submitted By:</label>
+    <input type="text" id="submittedBy" placeholder="Your name" required>
+
+    <label>Phone No:</label>
+    <input type="text" id="phone" placeholder="Phone number" required>
+
+    <button type="submit">Submit Proposal</button>
+  </form>
+
+  <h2>🗂 Submitted Proposals</h2>
+  <table id="proposalTable">
+    <thead>
+      <tr>
+        <th>Project Name</th>
+        <th>Submitted By</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p id="message"></p>
+</div>
+
+<!-- Modal for Viewing Proposal -->
+<div id="viewModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById("proposalForm");
+const tableBody = document.querySelector("#proposalTable tbody");
+const modal = document.getElementById("viewModal");
+const modalBody = document.getElementById("modalBody");
+const message = document.getElementById("message");
+
+// Load all proposals on page load
+window.onload = loadProposals;
+
+// Submit new proposal
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("title").value;
+  const description = document.getElementById("description").value;
+  const itemsInput = document.getElementById("items").value;
+  const total = document.getElementById("total").value;
+  const submittedBy = document.getElementById("submittedBy").value;
+  const phone = document.getElementById("phone").value;
+
+  const items = itemsInput.split(",").map(i => {
+    const [name,cost] = i.split(":");
+    return { name: name.trim(), cost: Number(cost) };
+  });
+
+  try {
+    const res = await fetch("http://localhost:5000/api/proposals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, description, items, total, submittedBy, phone })
+    });
+
+    if(res.ok){
+      form.reset();
+      message.textContent = "✅ Proposal submitted successfully!";
+      loadProposals();
+      setTimeout(()=>message.textContent="",3000);
+    } else {
+      const data = await res.json();
+      message.textContent = "❌ Error: " + (data.error || res.status);
+    }
+  } catch(err) {
+    console.error(err);
+    message.textContent = "❌ Network error";
+  }
+});
+
+// Load all proposals
+async function loadProposals() {
+  try {
+    const res = await fetch("http://localhost:5000/api/proposals");
+    const proposals = await res.json();
+    tableBody.innerHTML = "";
+
+    proposals.forEach(p => {
+      const row = document.createElement("tr");
+      const status = p.approved ? "✅ Approved" : "⌛ Pending";
+
+      row.innerHTML = `
+        <td>${p.title}</td>
+        <td>${p.submittedBy}</td>
+        <td>${status}</td>
+        <td>
+          <button class="view-btn action-btn" onclick="viewProposal('${p._id}')">View</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+  } catch(err) {
+    console.error(err);
+    message.textContent = "❌ Could not load proposals";
+  }
+}
+
+// View proposal modal
+async function viewProposal(id) {
+  try {
+    const res = await fetch("http://localhost:5000/api/proposals");
+    const proposals = await res.json();
+    const p = proposals.find(p => p._id === id);
+    if(!p) return alert("Proposal not found.");
+
+    modalBody.innerHTML = `
+      <h3>${p.title}</h3>
+      <p><b>Description:</b> ${p.description}</p>
+      <p><b>Submitted By:</b> ${p.submittedBy} | <b>Phone:</b> ${p.phone}</p>
+      <p><b>Total Amount:</b> ${p.total}</p>
+      <p><b>Status:</b> ${p.approved ? "✅ Approved" : "⌛ Pending"}</p>
+      <p><b>Items:</b></p>
+      <ul>
+        ${p.items.map(it => `<li>${it.name}: ${it.cost}</li>`).join("")}
+      </ul>
+    `;
+    modal.style.display = "block";
+  } catch(err) { console.error(err); }
+}
+
+function closeModal() {
+  modal.style.display = "none";
+}
+window.onclick = function(event) {
+  if(event.target == modal) closeModal();
+}
+</script>
+</body>
+</html>
