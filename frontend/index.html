@@ -10,7 +10,8 @@
   <h1>📄 Proposal Builder</h1>
 
   <!-- Proposal Submission Form -->
-  <form id="proposalForm">
+  <form id="proposalForm" class="form-card">
+    <h2>Submit New Proposal</h2>
     <label>Project Name:</label>
     <input type="text" id="title" placeholder="Enter project name" required>
 
@@ -30,22 +31,11 @@
     <input type="text" id="phone" placeholder="Phone number" required>
 
     <button type="submit">Submit Proposal</button>
+    <p id="message"></p>
   </form>
 
   <h2>🗂 Submitted Proposals</h2>
-  <table id="proposalTable">
-    <thead>
-      <tr>
-        <th>Project Name</th>
-        <th>Submitted By</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <p id="message"></p>
+  <div id="proposals-container" class="card-container"></div>
 </div>
 
 <!-- Modal for Viewing Proposal -->
@@ -57,8 +47,9 @@
 </div>
 
 <script>
+const BASE_URL = "https://proposal-builder-sndn.onrender.com/api/proposals";
 const form = document.getElementById("proposalForm");
-const tableBody = document.querySelector("#proposalTable tbody");
+const container = document.getElementById("proposals-container");
 const modal = document.getElementById("viewModal");
 const modalBody = document.getElementById("modalBody");
 const message = document.getElementById("message");
@@ -82,7 +73,7 @@ form.addEventListener("submit", async (e) => {
   });
 
   try {
-    const res = await fetch("http://localhost:5000/api/proposals", {
+    const res = await fetch(BASE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, description, items, total, submittedBy, phone })
@@ -106,23 +97,22 @@ form.addEventListener("submit", async (e) => {
 // Load all proposals
 async function loadProposals() {
   try {
-    const res = await fetch("http://localhost:5000/api/proposals");
+    const res = await fetch(BASE_URL);
     const proposals = await res.json();
-    tableBody.innerHTML = "";
+    container.innerHTML = "";
 
     proposals.forEach(p => {
-      const row = document.createElement("tr");
       const status = p.approved ? "✅ Approved" : "⌛ Pending";
+      const card = document.createElement("div");
+      card.classList.add("proposal-card");
 
-      row.innerHTML = `
-        <td>${p.title}</td>
-        <td>${p.submittedBy}</td>
-        <td>${status}</td>
-        <td>
-          <button class="view-btn action-btn" onclick="viewProposal('${p._id}')">View</button>
-        </td>
+      card.innerHTML = `
+        <h3>${p.title}</h3>
+        <p><b>Submitted By:</b> ${p.submittedBy}</p>
+        <p><b>Status:</b> ${status}</p>
+        <button onclick='viewProposal("${p._id}")'>View Details</button>
       `;
-      tableBody.appendChild(row);
+      container.appendChild(card);
     });
   } catch(err) {
     console.error(err);
@@ -133,7 +123,7 @@ async function loadProposals() {
 // View proposal modal
 async function viewProposal(id) {
   try {
-    const res = await fetch("http://localhost:5000/api/proposals");
+    const res = await fetch(BASE_URL);
     const proposals = await res.json();
     const p = proposals.find(p => p._id === id);
     if(!p) return alert("Proposal not found.");
@@ -142,11 +132,11 @@ async function viewProposal(id) {
       <h3>${p.title}</h3>
       <p><b>Description:</b> ${p.description}</p>
       <p><b>Submitted By:</b> ${p.submittedBy} | <b>Phone:</b> ${p.phone}</p>
-      <p><b>Total Amount:</b> ${p.total}</p>
+      <p><b>Total Amount:</b> ₹${p.total}</p>
       <p><b>Status:</b> ${p.approved ? "✅ Approved" : "⌛ Pending"}</p>
       <p><b>Items:</b></p>
       <ul>
-        ${p.items.map(it => `<li>${it.name}: ${it.cost}</li>`).join("")}
+        ${p.items.map(it => `<li>${it.name}: ₹${it.cost}</li>`).join("")}
       </ul>
     `;
     modal.style.display = "block";

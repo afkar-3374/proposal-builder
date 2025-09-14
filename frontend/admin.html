@@ -6,87 +6,29 @@
   <link rel="stylesheet" href="style.css">
   <style>
     /* =================== Login Overlay =================== */
-    #loginOverlay {
-      position: fixed;
-      z-index: 1000;
-      left:0; top:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.6);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
-    #loginBox {
-      background:#fff;
-      padding:40px;
-      border-radius:12px;
-      width:320px;
-      text-align:center;
-      box-shadow:0 8px 16px rgba(0,0,0,0.2);
-    }
+    #loginOverlay { position: fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; }
+    #loginBox { background:#fff; padding:40px; border-radius:12px; width:320px; text-align:center; box-shadow:0 8px 16px rgba(0,0,0,0.2); }
     #loginBox h2 { color:#2196F3; margin-bottom:20px; }
-    #loginBox input {
-      width:100%;
-      padding:10px;
-      margin:10px 0;
-      border-radius:8px;
-      border:1px solid #ccc;
-    }
-    #loginBox button {
-      width:100%;
-      padding:10px;
-      border:none;
-      border-radius:8px;
-      background:#2196F3;
-      color:#fff;
-      font-size:16px;
-      cursor:pointer;
-      transition:0.3s;
-    }
+    #loginBox input { width:100%; padding:10px; margin:10px 0; border-radius:8px; border:1px solid #ccc; }
+    #loginBox button { width:100%; padding:10px; border:none; border-radius:8px; background:#2196F3; color:#fff; font-size:16px; cursor:pointer; transition:0.3s; }
     #loginBox button:hover { background:#1976d2; }
     #loginMsg { color:red; font-weight:bold; margin-top:10px; }
 
-    /* Modal Card Styles (same as previous) */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 999;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      overflow: auto;
-      background: rgba(0,0,0,0.5);
-    }
-    .modal-content {
-      background: #fff;
-      margin: 8% auto;
-      padding: 25px;
-      border-radius: 12px;
-      max-width: 500px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-      animation: slideDown 0.3s ease;
-    }
-    @keyframes slideDown {
-      from { transform: translateY(-50px); opacity:0; }
-      to { transform: translateY(0); opacity:1; }
-    }
-    .close-btn {
-      float: right;
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .modal h3 { margin-top: 0; color: #2196F3; }
-    .modal p { margin: 6px 0; line-height: 1.5; }
-    .modal ul { padding-left: 20px; }
-    .modal ul li { margin-bottom: 5px; }
+    /* Modal Card Styles */
+    .modal { display:none; position:fixed; z-index:999; left:0; top:0; width:100%; height:100%; overflow:auto; background: rgba(0,0,0,0.5); }
+    .modal-content { background:#fff; margin:8% auto; padding:25px; border-radius:12px; max-width:500px; box-shadow:0 12px 24px rgba(0,0,0,0.3); animation: slideDown 0.3s ease; }
+    @keyframes slideDown { from { transform: translateY(-50px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .close-btn { float:right; font-size:24px; font-weight:bold; cursor:pointer; }
+    .modal h3 { margin-top:0; color:#2196F3; }
+    .modal p { margin:6px 0; line-height:1.5; }
+    .modal ul { padding-left:20px; }
+    .modal ul li { margin-bottom:5px; }
 
-    /* Table & Buttons (same as style.css) */
+    /* Table & Buttons */
     .action-btn { padding:5px 10px; border:none; border-radius:6px; cursor:pointer; font-size:14px; margin:2px; transition:0.3s; }
-    .view-btn { background:#2196F3; color:#fff; }
-    .view-btn:hover { background:#1976d2; }
-    .approve-btn { background:#4CAF50; color:#fff; }
-    .approve-btn:hover { background:#388e3c; }
-    .delete-btn { background:#f44336; color:#fff; }
-    .delete-btn:hover { background:#d32f2f; }
+    .view-btn { background:#2196F3; color:#fff; } .view-btn:hover { background:#1976d2; }
+    .approve-btn { background:#4CAF50; color:#fff; } .approve-btn:hover { background:#388e3c; }
+    .delete-btn { background:#f44336; color:#fff; } .delete-btn:hover { background:#d32f2f; }
   </style>
 </head>
 <body>
@@ -127,7 +69,8 @@
   </div>
 
   <script>
-    // Hardcoded credentials
+    const BASE_URL = "https://proposal-builder-sndn.onrender.com/api/proposals";
+
     const ADMIN_USER = "CW";
     const ADMIN_PASS = "0816";
 
@@ -151,7 +94,6 @@
       location.reload();
     }
 
-    // Auto check login
     if(localStorage.getItem("adminLoggedIn") === "true") {
       document.getElementById("loginOverlay").style.display = "none";
       document.getElementById("adminPanel").style.display = "block";
@@ -164,7 +106,7 @@
 
     async function loadProposals() {
       try {
-        const res = await fetch("http://localhost:5000/api/proposals");
+        const res = await fetch(BASE_URL);
         const proposals = await res.json();
 
         tableBody.innerHTML = "";
@@ -184,14 +126,12 @@
           `;
           tableBody.appendChild(row);
         });
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
 
     async function viewProposal(id) {
       try {
-        const res = await fetch("http://localhost:5000/api/proposals");
+        const res = await fetch(BASE_URL);
         const proposals = await res.json();
         const p = proposals.find(p => p._id === id);
         if(!p) return alert("Proposal not found.");
@@ -200,31 +140,24 @@
           <h3>${p.title}</h3>
           <p><b>Description:</b> ${p.description}</p>
           <p><b>Submitted By:</b> ${p.submittedBy} | <b>Phone:</b> ${p.phone}</p>
-          <p><b>Total Amount:</b> ${p.total}</p>
+          <p><b>Total Amount:</b> ₹${p.total}</p>
           <p><b>Status:</b> ${p.approved ? "✅ Approved" : "⌛ Pending"}</p>
           <p><b>Items:</b></p>
           <ul>
-            ${p.items.map(it => `<li>${it.name}: ${it.cost}</li>`).join("")}
+            ${p.items.map(it => `<li>${it.name}: ₹${it.cost}</li>`).join("")}
           </ul>
         `;
         modal.style.display = "block";
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }
 
-    function closeModal() {
-      modal.style.display = "none";
-    }
-
-    window.onclick = function(event) {
-      if(event.target == modal) closeModal();
-    }
+    function closeModal() { modal.style.display = "none"; }
+    window.onclick = function(event) { if(event.target == modal) closeModal(); }
 
     async function deleteProposal(id) {
       if(!confirm("Are you sure to delete this proposal?")) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/proposals/${id}`, { method: "DELETE" });
+        const res = await fetch(`${BASE_URL}/${id}`, { method: "DELETE" });
         if(res.ok) {
           alert("✅ Deleted successfully");
           loadProposals();
@@ -237,13 +170,11 @@
 
     async function approveProposal(id) {
       try {
-        const res = await fetch(`http://localhost:5000/api/proposals/${id}/approve`, { method: "PUT" });
+        const res = await fetch(`${BASE_URL}/${id}/approve`, { method: "PUT" });
         if(res.ok) {
           alert("✅ Approved");
           loadProposals();
-        } else {
-          alert("❌ Approval failed");
-        }
+        } else { alert("❌ Approval failed"); }
       } catch(err) { console.error(err); }
     }
   </script>
